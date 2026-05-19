@@ -1,12 +1,12 @@
 package store
 
 import (
+	"context"
 	"database/sql"
 	"time"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
+// Bookmark represents a bookmark in the system.
 type Bookmark struct {
 	ID        int64
 	Title     string
@@ -14,30 +14,20 @@ type Bookmark struct {
 	CreatedAt time.Time
 }
 
-func Initialize() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", "linkshelf.db")
-	if err!= nil {
-		return nil, err
-	}
-
-	_, err = db.Exec(`
-	CREATE TABLE IF NOT EXISTS bookmarks (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		title TEXT NOT NULL,
-		url TEXT NOT NULL,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-	);
-	`)
-	if err!= nil {
-		return nil, err
-	}
-
-	return db, nil
+// Store provides methods to interact with the bookmarks table.
+type Store struct {
+	db *sql.DB
 }
 
-func GetAllBookmarks(db *sql.DB) ([]Bookmark, error) {
-	rows, err := db.Query("SELECT id, title, url, created_at FROM bookmarks")
-	if err!= nil {
+// NewStore returns a new Store given a database connection.
+func NewStore(db *sql.DB) *Store {
+	return &Store{db: db}
+}
+
+// GetAllBookmarks returns all bookmarks from the database.
+func (s *Store) GetAllBookmarks(ctx context.Context) ([]Bookmark, error) {
+	rows, err := s.db.QueryContext(ctx, "SELECT id, title, url, created_at FROM bookmarks")
+	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
@@ -45,48 +35,53 @@ func GetAllBookmarks(db *sql.DB) ([]Bookmark, error) {
 	var bookmarks []Bookmark
 	for rows.Next() {
 		var b Bookmark
-		err := rows.Scan(&b.ID, &b.Title, &b.URL, &b.CreatedAt)
-		if err!= nil {
+		if err := rows.Scan(&b.ID, &b.Title, &b.URL, &b.CreatedAt); err != nil {
 			return nil, err
 		}
 		bookmarks = append(bookmarks, b)
 	}
-
 	return bookmarks, nil
 }
 
-func GetBookmark(db *sql.DB, id int64) (*Bookmark, error) {
-	row := db.QueryRow("SELECT id, title, url, created_at FROM bookmarks WHERE id =?", id)
-
+// GetBookmark returns a single bookmark by ID.
+func (s *Store) GetBookmark(ctx context.Context, id int64) (*Bookmark, error) {
+	row := s.db.QueryRowContext(ctx, "SELECT id, title, url, created_at FROM bookmarks WHERE id = ?", id)
 	var b Bookmark
-	err := row.Scan(&b.ID, &b.Title, &b.URL, &b.CreatedAt)
-	if err!= nil {
+	if err := row.Scan(&b.ID, &b.Title, &b.URL, &b.CreatedAt); err != nil {
 		return nil, err
 	}
-
 	return &b, nil
 }
 
-func CreateBookmark(db *sql.DB, title, url string) (*Bookmark, error) {
-	result, err := db.Exec("INSERT INTO bookmarks (title, url) VALUES (?,?)", title, url)
-	if err!= nil {
-		return nil, err
+// CreateBookmark inserts a new bookmark and returns its ID.
+func (s *Store) CreateBookmark(ctx context.Context, b *Bookmark) (int64, error) {
+	result, err := s.db.ExecContext(
+		ctx,
+		"INSERT INTO bookmarks (title, url, created_at) VALUES (?, ?, ?)",
+		b.Title, b.URL, b.CreatedAt,
+	)
+	if err != nil {
+		return 0, err
 	}
-
 	id, err := result.LastInsertId()
-	if err!= nil {
-		return nil, err
+	if err != nil {
+		return 0, err
 	}
-
-	return GetBookmark(db, id)
+	return id, nil
 }
 
-func UpdateBookmark(db *sql.DB, b *Bookmark) error {
-	_, err := db.Exec("UPDATE bookmarks SET title =?, url =? WHERE id =?", b.Title, b.URL, b.ID)
+// UpdateBookmark updates an existing bookmark.
+func (s *Store) UpdateBookmark(ctx context.Context, b *Bookmark) error {
+	_, err := s.db.ExecContext(
+		ctx,
+		"UPDATE bookmarks SET title = ?, url = ?, created_at = ? WHERE id = ?",
+		b.Title, b.URL, b.CreatedAt, b.ID,
+	)
 	return err
 }
 
-func DeleteBookmark(db *sql.DB, id int64) error {
-	_, err := db.Exec("DELETE FROM bookmarks WHERE id =?", id)
+// DeleteBookmark removes a bookmark by ID.
+func (s *Store) DeleteBookmark(ctx context.Context, id int64) error {
+	_, err := s.db.ExecContext(ctx, "DELETE FROM bookmarks WHERE id = ?", id)
 	return err
 }
