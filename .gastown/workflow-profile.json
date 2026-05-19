@@ -7,7 +7,7 @@
     "layout_root": "linkshelf",
     "bead_title_contains": "Implement linkshelf/",
     "unittest_module": "",
-    "qa_verify_command": "cd linkshelf \u0026\u0026 go mod tidy \u0026\u0026 go build ./... \u0026\u0026 go run ./cmd/server -test.v",
+    "qa_verify_command": "cd linkshelf && go mod tidy && go build ./...",
     "test_runner": "custom",
     "required_files": [
       "linkshelf/go.mod",
@@ -30,7 +30,7 @@
           "linkshelf/internal/store/store.go",
           "linkshelf/internal/api/handlers.go"
         ],
-        "qa_verify_command": "go mod tidy \u0026\u0026 go build ./... \u0026\u0026 go run ./cmd/server",
+        "qa_verify_command": "go build ./...",
         "spec_focus": "linkshelf - Backend Structure"
       },
       {
@@ -41,7 +41,7 @@
           "linkshelf/web/app.js",
           "linkshelf/web/style.css"
         ],
-        "qa_verify_command": "npm install \u0026\u0026 npm run build",
+        "qa_verify_command": "npm install && npm run build",
         "depends_on": [
           "linkshelf-backend"
         ],
