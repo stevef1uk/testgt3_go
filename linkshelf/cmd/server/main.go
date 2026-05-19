@@ -8,9 +8,10 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
 	"linkshelf/internal/api"
 	"linkshelf/internal/store"
+	"database/sql"
+	_ "modernc.org/sqlite"
 )
 
 func main() {
@@ -20,17 +21,15 @@ func main() {
 		port = "8080"
 	}
 
-	// Initialize SQLite store
-	s, err := store.NewStore("linkshelf.db")
+	db, err := sql.Open("sqlite", "linkshelf.db")
 	if err!= nil {
-		log.Fatalf("Failed to initialize store: %v", err)
+		log.Fatalf("Failed to open database: %v", err)
 	}
-	defer s.Close()
+	defer db.Close()
 
-	// Create handlers
-	h := api.NewHandlers(s)
+	store := store.NewStore(db)
+	h := api.NewHandlers(*store)
 
-	// Set up routes
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/bookmarks", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -55,33 +54,28 @@ func main() {
 		}
 	})
 
-	// Create server
 	srv := &http.Server{
-		Addr:              ":" + port,
-		Handler:           mux,
-		ReadHeaderTimeout: 5 * time.Second,
+		Addr:    ":" + port,
+		Handler: mux,
 	}
 
-	// Start server in goroutine
 	go func() {
 		log.Printf("Server starting on port %s", port)
 		if err := srv.ListenAndServe(); err!= nil && err!= http.ErrServerClosed {
-			log.Fatalf("Server failed to start: %v", err)
+			log.Fatalf("Failed to start server: %v", err)
 		}
 	}()
 
-	// Wait for interrupt signal to gracefully shutdown
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	<-stop
+
 	log.Println("Shutting down server...")
-
-	// Shutdown with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := srv.Shutdown(ctx); err!= nil {
-		log.Fatalf("Server forced to shutdown: %v", err)
-	}
 
-	log.Println("Server exited")
+	if err := srv.Shutdown(ctx); err!= nil {
+		log.Fatalf("Server shutdown failed: %v", err)
+	}
+	log.Println("Server shutdown complete")
 }

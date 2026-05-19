@@ -58,7 +58,7 @@ func (s *Store) GetBookmark(id int) (*Bookmark, error) {
 
 // CreateBookmark creates a new bookmark in the database.
 func (s *Store) CreateBookmark(b *Bookmark) error {
-	_, err := s.db.Exec("INSERT INTO bookmarks (title, url, created_at) VALUES (?,?,?)", b.Title, b.URL, time.Now())
+	_, err := s.db.Exec("INSERT INTO bookmarks (title, url, created_at) VALUES (?,?,?)", b.Title, b.URL, b.CreatedAt)
 	return err
 }
 
@@ -68,28 +68,8 @@ func (s *Store) UpdateBookmark(b *Bookmark) error {
 	return err
 }
 
-// DeleteBookmark deletes a bookmark by ID from the database.
+// DeleteBookmark deletes a bookmark from the database.
 func (s *Store) DeleteBookmark(id int) error {
 	_, err := s.db.Exec("DELETE FROM bookmarks WHERE id =?", id)
 	return err
-}
-
-// OpenDatabase opens the SQLite database and ensures schema initialization.
-func OpenDatabase() (*sql.DB, error) {
-	db, err := sql.Open("sqlite", "./linkshelf.db")
-	if err!= nil {
-		return nil, err
-	}
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS bookmarks (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			title TEXT NOT NULL,
-			url TEXT NOT NULL,
-			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-		);
-	`)
-	if err!= nil {
-		return nil, err
-	}
-	return db, nil
 }
