@@ -46,7 +46,7 @@ func (h *Handlers) GetBookmarkHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	b, err := h.store.GetBookmark(r.Context(), id)
+	b, err := h.store.GetBookmark(r.Context(), int64(id))
 	if err!= nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -74,7 +74,7 @@ func (h *Handlers) DeleteBookmarkHandler(w http.ResponseWriter, r *http.Request)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = h.store.DeleteBookmark(r.Context(), id)
+	err = h.store.DeleteBookmark(r.Context(), int64(id))
 	if err!= nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
