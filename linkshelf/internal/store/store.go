@@ -3,85 +3,116 @@ package store
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 )
 
-// Bookmark represents a bookmark in the system.
-type Bookmark struct {
-	ID        int64
-	Title     string
-	URL       string
-	CreatedAt time.Time
+type Task struct {
+	ID          string
+	Title       string
+	Description string
+	Status      string
+	CreatedAt   time.Time
 }
 
-// Store provides methods to interact with the bookmarks table.
+func NewTask(title, description string) *Task {
+	return &Task{
+		ID:          uuid.New().String(),
+		Title:       title,
+		Description: description,
+		Status:      "pending",
+		CreatedAt:   time.Now(),
+	}
+}
+
 type Store struct {
 	db *sql.DB
 }
 
-// NewStore returns a new Store given a database connection.
 func NewStore(db *sql.DB) *Store {
-	return &Store{db: db}
+	s := &Store{db: db}
+	s.initTable()
+	return s
 }
 
-// GetAllBookmarks returns all bookmarks from the database.
-func (s *Store) GetAllBookmarks(ctx context.Context) ([]Bookmark, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT id, title, url, created_at FROM bookmarks")
+func (s *Store) initTable() {
+	query := `
+		CREATE TABLE IF NOT EXISTS tasks (
+			id TEXT PRIMARY KEY,
+			title TEXT NOT NULL,
+			description TEXT,
+			status TEXT NOT NULL,
+			created_at TIMESTAMP NOT NULL
+		);
+	`
+	_, err := s.db.Exec(query)
+	if err != nil {
+		panic(fmt.Sprintf("failed to create table: %v", err))
+	}
+}
+
+func (s *Store) CreateTask(ctx context.Context, task *Task) error {
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO tasks (id, title, description, status, created_at)
+		VALUES (?, ?, ?, ?, ?)
+	`, task.ID, task.Title, task.Description, task.Status, task.CreatedAt)
+	return err
+}
+
+func (s *Store) GetTask(ctx context.Context, id string) (*Task, error) {
+	row := s.db.QueryRowContext(ctx, `
+		SELECT id, title, description, status, created_at
+		FROM tasks
+		WHERE id = ?
+	`, id)
+	var t Task
+	err := row.Scan(&t.ID, &t.Title, &t.Description, &t.Status, &t.CreatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &t, nil
+}
+
+func (s *Store) ListTasks(ctx context.Context) ([]*Task, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT id, title, description, status, created_at
+		FROM tasks
+		ORDER BY created_at DESC
+	`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var bookmarks []Bookmark
+	var tasks []*Task
 	for rows.Next() {
-		var b Bookmark
-		if err := rows.Scan(&b.ID, &b.Title, &b.URL, &b.CreatedAt); err != nil {
+		var t Task
+		if err := rows.Scan(&t.ID, &t.Title, &t.Description, &t.Status, &t.CreatedAt); err != nil {
 			return nil, err
 		}
-		bookmarks = append(bookmarks, b)
+		tasks = append(tasks, &t)
 	}
-	return bookmarks, nil
-}
-
-// GetBookmark returns a single bookmark by ID.
-func (s *Store) GetBookmark(ctx context.Context, id int64) (*Bookmark, error) {
-	row := s.db.QueryRowContext(ctx, "SELECT id, title, url, created_at FROM bookmarks WHERE id = ?", id)
-	var b Bookmark
-	if err := row.Scan(&b.ID, &b.Title, &b.URL, &b.CreatedAt); err != nil {
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	return &b, nil
+	return tasks, nil
 }
 
-// CreateBookmark inserts a new bookmark and returns its ID.
-func (s *Store) CreateBookmark(ctx context.Context, b *Bookmark) (int64, error) {
-	result, err := s.db.ExecContext(
-		ctx,
-		"INSERT INTO bookmarks (title, url, created_at) VALUES (?, ?, ?)",
-		b.Title, b.URL, b.CreatedAt,
-	)
-	if err != nil {
-		return 0, err
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
-}
-
-// UpdateBookmark updates an existing bookmark.
-func (s *Store) UpdateBookmark(ctx context.Context, b *Bookmark) error {
-	_, err := s.db.ExecContext(
-		ctx,
-		"UPDATE bookmarks SET title = ?, url = ?, created_at = ? WHERE id = ?",
-		b.Title, b.URL, b.CreatedAt, b.ID,
-	)
+func (s *Store) UpdateTask(ctx context.Context, task *Task) error {
+	_, err := s.db.ExecContext(ctx, `
+		UPDATE tasks
+		SET title = ?, description = ?, status = ?
+		WHERE id = ?
+	`, task.Title, task.Description, task.Status, task.ID)
 	return err
 }
 
-// DeleteBookmark removes a bookmark by ID.
-func (s *Store) DeleteBookmark(ctx context.Context, id int64) error {
-	_, err := s.db.ExecContext(ctx, "DELETE FROM bookmarks WHERE id = ?", id)
+func (s *Store) DeleteTask(ctx context.Context, id string) error {
+	_, err := s.db.ExecContext(ctx, `DELETE FROM tasks WHERE id = ?`, id)
 	return err
 }
