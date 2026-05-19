@@ -2,7 +2,10 @@ module linkshelf
 
 go 1.25.6
 
-require modernc.org/sqlite v1.50.1
+require (
+	github.com/mattn/go-sqlite3 v1.14.44
+	modernc.org/sqlite v1.50.1
+)
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
