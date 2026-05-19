@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -20,23 +21,23 @@ func main() {
 	}
 
 	// Initialize SQLite store
-	db, err := store.NewStore("linkshelf.db")
-	if err != nil {
+	s, err := store.NewStore("linkshelf.db")
+	if err!= nil {
 		log.Fatalf("Failed to initialize store: %v", err)
 	}
-	defer db.Close()
+	defer s.Close()
 
 	// Create handlers
-	h := api.NewHandlers(db)
+	h := api.NewHandlers(s)
 
 	// Set up routes
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/bookmarks", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			h.getBookmarksHandler(w, r)
+			h.GetBookmarksHandler(w, r)
 		case http.MethodPost:
-			h.createBookmarkHandler(w, r)
+			h.CreateBookmarkHandler(w, r)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -44,11 +45,11 @@ func main() {
 	mux.HandleFunc("/api/bookmarks/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			h.getBookmarkHandler(w, r)
+			h.GetBookmarkHandler(w, r)
 		case http.MethodPut:
-			h.updateBookmarkHandler(w, r)
+			h.UpdateBookmarkHandler(w, r)
 		case http.MethodDelete:
-			h.deleteBookmarkHandler(w, r)
+			h.DeleteBookmarkHandler(w, r)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -64,7 +65,7 @@ func main() {
 	// Start server in goroutine
 	go func() {
 		log.Printf("Server starting on port %s", port)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err!= nil && err!= http.ErrServerClosed {
 			log.Fatalf("Server failed to start: %v", err)
 		}
 	}()
@@ -78,7 +79,7 @@ func main() {
 	// Shutdown with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
+	if err := srv.Shutdown(ctx); err!= nil {
 		log.Fatalf("Server forced to shutdown: %v", err)
 	}
 
