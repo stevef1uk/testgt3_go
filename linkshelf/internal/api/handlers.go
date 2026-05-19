@@ -17,7 +17,7 @@ func NewHandlers(store store.Store) *Handlers {
 }
 
 func (h *Handlers) GetBookmarksHandler(w http.ResponseWriter, r *http.Request) {
-	bookmarks, err := h.store.GetAllBookmarks()
+	bookmarks, err := h.store.GetAllBookmarks(r.Context())
 	if err!= nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -32,7 +32,7 @@ func (h *Handlers) CreateBookmarkHandler(w http.ResponseWriter, r *http.Request)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = h.store.CreateBookmark(&b)
+	err = h.store.CreateBookmark(r.Context(), &b)
 	if err!= nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -46,7 +46,7 @@ func (h *Handlers) GetBookmarkHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	b, err := h.store.GetBookmark(id)
+	b, err := h.store.GetBookmark(r.Context(), id)
 	if err!= nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -55,19 +55,13 @@ func (h *Handlers) GetBookmarkHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) UpdateBookmarkHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(r.URL.Path[len("/api/bookmarks/"):])
-	if err!= nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
 	var b store.Bookmark
-	err = json.NewDecoder(r.Body).Decode(&b)
+	err := json.NewDecoder(r.Body).Decode(&b)
 	if err!= nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	b.ID = id
-	err = h.store.UpdateBookmark(&b)
+	err = h.store.UpdateBookmark(r.Context(), &b)
 	if err!= nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -80,7 +74,7 @@ func (h *Handlers) DeleteBookmarkHandler(w http.ResponseWriter, r *http.Request)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = h.store.DeleteBookmark(id)
+	err = h.store.DeleteBookmark(r.Context(), id)
 	if err!= nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
