@@ -13,12 +13,15 @@ import (
 func main() {
 	// Initialize store
 	db, err := sql.Open("sqlite3", "./linkshelf.db")
-	if err!= nil {
+	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
-	s := store.NewSQLStore(db)
+	s, err := store.NewSQLStore(db)
+	if err != nil {
+		log.Fatal(err)
+	}
 	api.SetStore(s)
 
 	// Serve static files from web directory
@@ -30,7 +33,7 @@ func main() {
 	http.HandleFunc("/api/bookmarks/", api.BookmarkHandler)
 
 	log.Println("Starting server on :8080")
-	if err := http.ListenAndServe(":8080", nil); err!= nil {
+	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)
 	}
 }
