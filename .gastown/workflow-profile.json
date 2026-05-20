@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "generated_at": "2026-05-19T14:11:12Z",
+  "source": "llm",
+  "confidence": "medium",
+  "validation": {
+    "layout_root": "linkshelf",
+    "bead_title_contains": "Implement linkshelf/",
+    "unittest_module": "",
+    "qa_verify_command": "cd linkshelf && go mod tidy && go build ./...",
+    "test_runner": "custom",
+    "required_files": [
+      "linkshelf/go.mod",
+      "linkshelf/cmd/server/main.go",
+      "linkshelf/internal/store/store.go",
+      "linkshelf/internal/api/handlers.go",
+      "linkshelf/web/index.html",
+      "linkshelf/web/app.js",
+      "linkshelf/web/style.css",
+      "linkshelf/internal/store/store_test.go",
+      "linkshelf/internal/api/handlers_test.go"
+    ],
+    "delivery_phases": [
+      {
+        "id": "linkshelf-backend",
+        "title": "Backend Layer: Go HTTP Server",
+        "required_files": [
+          "linkshelf/go.mod",
+          "linkshelf/cmd/server/main.go",
+          "linkshelf/internal/store/store.go",
+          "linkshelf/internal/api/handlers.go"
+        ],
+        "qa_verify_command": "go build ./...",
+        "spec_focus": "linkshelf - Backend Structure"
+      },
+      {
+        "id": "linkshelf-frontend",
+        "title": "Frontend Layer: Vanilla HTML/JS",
+        "required_files": [
+          "linkshelf/web/index.html",
+          "linkshelf/web/app.js",
+          "linkshelf/web/style.css"
+        ],
+        "qa_verify_command": "npm install && npm run build",
+        "depends_on": [
+          "linkshelf-backend"
+        ],
+        "spec_focus": "linkshelf - Frontend Structure"
+      },
+      {
+        "id": "linkshelf-e2e",
+        "title": "End-to-End Test Suite",
+        "required_files": [
+          "linkshelf/internal/store/store_test.go",
+          "linkshelf/internal/api/handlers_test.go"
+        ],
+        "qa_verify_command": "go test ./... -v",
+        "depends_on": [
+          "linkshelf-backend",
+          "linkshelf-frontend"
+        ],
+        "spec_focus": "linkshelf - End-to-End Test Suite"
+      }
+    ],
+    "active_phase_id": "linkshelf-backend",
+    "spec_summary": "A personal bookmark manager built with Go, SQLite, and Vanilla JS, following standard web development concepts. This project covers backend HTTP server structure, frontend client-side build, and end-to-end testing.",
+    "min_architecture_bytes": 3200,
+    "min_plan_bytes": 1600,
+    "min_implementation_file_bytes": 400,
+    "min_substantive_lines": 3,
+    "python_venv_dir": ""
+  }
+}
