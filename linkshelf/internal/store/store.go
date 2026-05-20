@@ -59,7 +59,7 @@ func (s *Store) GetBookmark(id int) (*Bookmark, error) {
 }
 
 func (s *Store) CreateBookmark(b *Bookmark) error {
-	res, err := s.db.Exec("INSERT INTO bookmarks (title, url, created_at) VALUES (?,?,?)", b.Title, b.URL, b.CreatedAt)
+	res, err := s.db.Exec("INSERT INTO bookmarks (title, url, created_at) VALUES (?, ?, ?)", b.Title, b.URL, time.Now())
 	if err != nil {
 		return err
 	}
@@ -72,25 +72,29 @@ func (s *Store) CreateBookmark(b *Bookmark) error {
 }
 
 func (s *Store) UpdateBookmark(b *Bookmark) error {
-	res, err := s.db.Exec("UPDATE bookmarks SET title = ?, url = ?, created_at = ? WHERE id = ?", b.Title, b.URL, b.CreatedAt, b.ID)
-	if err != nil {
-		return err
-	}
-	_, err = res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err := s.db.Exec("UPDATE bookmarks SET title = ?, url = ? WHERE id = ?", b.Title, b.URL, b.ID)
+	return err
 }
 
 func (s *Store) DeleteBookmark(id int) error {
-	res, err := s.db.Exec("DELETE FROM bookmarks WHERE id = ?", id)
+	_, err := s.db.Exec("DELETE FROM bookmarks WHERE id = ?", id)
+	return err
+}
+
+func init() {
+	db, err := sql.Open("sqlite3", "./linkshelf.db")
 	if err != nil {
-		return err
+		panic(err)
 	}
-	_, err = res.RowsAffected()
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS bookmarks (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			title TEXT NOT NULL,
+			url TEXT NOT NULL,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);
+	`)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
