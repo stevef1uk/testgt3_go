@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -8,102 +9,98 @@ import (
 	"linkshelf/internal/store"
 )
 
-var bookmarkStore *store.Store
+// bookmarkStore is the store for bookmarks.
+var bookmarkStore store.Store
 
-// SetStore injects the store dependency into the API package.
-func SetStore(s *store.Store) {
+// SetStore sets the store for the API handlers.
+func SetStore(s store.Store) {
 	bookmarkStore = s
 }
 
-// ListBookmarksHandler returns a list of all bookmarks.
+// ListBookmarksHandler handles GET /api/bookmarks.
 func ListBookmarksHandler(w http.ResponseWriter, r *http.Request) {
-	bookmarks, err := bookmarkStore.ListBookmarks(r.Context())
-	if err != nil {
-		http.Error(w, "failed to list bookmarks", http.StatusInternalServerError)
+	if r.Method!= http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+
+	bookmarks, err := bookmarkStore.ListBookmarks(context.Background())
+	if err!= nil {
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(bookmarks)
 }
 
-// CreateBookmarkHandler creates a new bookmark.
-func CreateBookmarkHandler(w http.ResponseWriter, r *http.Request) {
-	var bookmark store.Bookmark
-	if err := json.NewDecoder(r.Body).Decode(&bookmark); err != nil {
-		http.Error(w, "invalid request payload", http.StatusBadRequest)
+// BookmarkHandler handles GET, POST, PUT, DELETE on /api/bookmarks/{id}.
+func BookmarkHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := r.URL.Path[len("/api/bookmarks/"):]
+	if idStr == "" {
+		http.Error(w, "missing bookmark ID", http.StatusBadRequest)
 		return
 	}
-	if err := bookmarkStore.CreateBookmark(r.Context(), &bookmark); err != nil {
-		http.Error(w, "failed to create bookmark", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(bookmark)
-}
 
-// GetBookmarkHandler returns a single bookmark by ID.
-func GetBookmarkHandler(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
 	id, err := strconv.Atoi(idStr)
-	if err != nil {
+	if err!= nil {
 		http.Error(w, "invalid bookmark ID", http.StatusBadRequest)
 		return
 	}
-	bookmark, err := bookmarkStore.GetBookmark(r.Context(), id)
-	if err != nil {
-		if err == store.ErrNotFound {
-			http.Error(w, "bookmark not found", http.StatusNotFound)
-			return
-		}
-		http.Error(w, "failed to get bookmark", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(bookmark)
-}
 
-// UpdateBookmarkHandler updates an existing bookmark.
-func UpdateBookmarkHandler(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(w, "invalid bookmark ID", http.StatusBadRequest)
-		return
-	}
-	var bookmark store.Bookmark
-	if err := json.NewDecoder(r.Body).Decode(&bookmark); err != nil {
-		http.Error(w, "invalid request payload", http.StatusBadRequest)
-		return
-	}
-	bookmark.ID = id
-	if err := bookmarkStore.UpdateBookmark(r.Context(), &bookmark); err != nil {
-		if err == store.ErrNotFound {
-			http.Error(w, "bookmark not found", http.StatusNotFound)
+	switch r.Method {
+	case http.MethodGet:
+		bookmark, err := bookmarkStore.GetBookmark(context.Background(), id)
+		if err!= nil {
+			if err == store.ErrRecordNotFound {
+				http.Error(w, "bookmark not found", http.StatusNotFound)
+			} else {
+				http.Error(w, "internal server error", http.StatusInternalServerError)
+			}
 			return
 		}
-		http.Error(w, "failed to update bookmark", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(bookmark)
-}
-
-// DeleteBookmarkHandler deletes a bookmark by ID.
-func DeleteBookmarkHandler(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(w, "invalid bookmark ID", http.StatusBadRequest)
-		return
-	}
-	if err := bookmarkStore.DeleteBookmark(r.Context(), id); err != nil {
-		if err == store.ErrNotFound {
-			http.Error(w, "bookmark not found", http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(bookmark)
+	case http.MethodPost:
+		var b store.Bookmark
+		if err := json.NewDecoder(r.Body).Decode(&b); err!= nil {
+			http.Error(w, "invalid request body", http.StatusBadRequest)
 			return
 		}
-		http.Error(w, "failed to delete bookmark", http.StatusInternalServerError)
-		return
+		if err := bookmarkStore.CreateBookmark(context.Background(), &b); err!= nil {
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(b)
+	case http.MethodPut:
+		var b store.Bookmark
+		if err := json.NewDecoder(r.Body).Decode(&b); err!= nil {
+			http.Error(w, "invalid request body", http.StatusBadRequest)
+			return
+		}
+		b.ID = id
+		if err := bookmarkStore.UpdateBookmark(context.Background(), id, &b); err!= nil {
+			if err == store.ErrRecordNotFound {
+				http.Error(w, "bookmark not found", http.StatusNotFound)
+			} else {
+				http.Error(w, "internal server error", http.StatusInternalServerError)
+			}
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(b)
+	case http.MethodDelete:
+		if err := bookmarkStore.DeleteBookmark(context.Background(), id); err!= nil {
+			if err == store.ErrRecordNotFound {
+				http.Error(w, "bookmark not found", http.StatusNotFound)
+			} else {
+				http.Error(w, "internal server error", http.StatusInternalServerError)
+			}
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
-	w.WriteHeader(http.StatusNoContent)
 }

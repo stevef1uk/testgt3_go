@@ -1,73 +1,36 @@
 package main
 
 import (
-	"context"
+	"database/sql"
 	"log"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
+	_ "github.com/mattn/go-sqlite3"
 	"linkshelf/internal/api"
+	"linkshelf/internal/store"
 )
 
 func main() {
-	// Determine the port to listen on.
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	// Initialize store
+	db, err := sql.Open("sqlite3", "./linkshelf.db")
+	if err!= nil {
+		log.Fatal(err)
 	}
+	defer db.Close()
 
-	// Set up HTTP routes.
-	mux := http.NewServeMux()
-	mux.HandleFunc("/api/bookmarks", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			api.ListBookmarksHandler(w, r)
-		case http.MethodPost:
-			api.CreateBookmarkHandler(w, r)
-		default:
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
-	mux.HandleFunc("/api/bookmarks/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			api.GetBookmarkHandler(w, r)
-		case http.MethodPut:
-			api.UpdateBookmarkHandler(w, r)
-		case http.MethodDelete:
-			api.DeleteBookmarkHandler(w, r)
-		default:
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
+	s := store.NewSQLStore(db)
+	api.SetStore(s)
 
-	// Create the server.
-	srv := &http.Server{
-		Addr:    ":" + port,
-		Handler: mux,
+	// Serve static files from web directory
+	fs := http.FileServer(http.Dir("./web"))
+	http.Handle("/", fs)
+
+	// API routes
+	http.HandleFunc("/api/bookmarks", api.ListBookmarksHandler)
+	http.HandleFunc("/api/bookmarks/", api.BookmarkHandler)
+
+	log.Println("Starting server on :8080")
+	if err := http.ListenAndServe(":8080", nil); err!= nil {
+		log.Fatal(err)
 	}
-
-	// Run the server in a goroutine.
-	go func() {
-		log.Printf("Server listening on %s", srv.Addr)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s", err)
-		}
-	}()
-
-	// Graceful shutdown.
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Println("Shutting down server...")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Server forced to shutdown: %v", err)
-	}
-	log.Println("Server exiting")
 }
