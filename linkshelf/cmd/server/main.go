@@ -8,74 +8,68 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
 	"linkshelf/internal/api"
-	"linkshelf/internal/store"
-	"database/sql"
-	_ "modernc.org/sqlite"
 )
 
 func main() {
-	// Get port from environment or default to 8080
+	// Determine the port to listen on.
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	db, err := sql.Open("sqlite", "linkshelf.db")
-	if err!= nil {
-		log.Fatalf("Failed to open database: %v", err)
-	}
-	defer db.Close()
-
-	store := store.NewStore(db)
-	h := api.NewHandlers(*store)
-
+	// Set up HTTP routes.
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/bookmarks", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			h.GetBookmarksHandler(w, r)
+			api.ListBookmarksHandler(w, r)
 		case http.MethodPost:
-			h.CreateBookmarkHandler(w, r)
+			api.CreateBookmarkHandler(w, r)
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 	mux.HandleFunc("/api/bookmarks/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			h.GetBookmarkHandler(w, r)
-		case http.MethodPut:
-			h.UpdateBookmarkHandler(w, r)
+			api.GetBookmarkHandler(w, r)
+		case http.MethodPut, http.MethodPatch:
+			api.UpdateBookmarkHandler(w, r)
 		case http.MethodDelete:
-			h.DeleteBookmarkHandler(w, r)
+			api.DeleteBookmarkHandler(w, r)
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
+	// Create the server.
 	srv := &http.Server{
 		Addr:    ":" + port,
 		Handler: mux,
 	}
 
+	// Run the server in a goroutine so we can handle shutdown signals.
 	go func() {
-		log.Printf("Server starting on port %s", port)
-		if err := srv.ListenAndServe(); err!= nil && err!= http.ErrServerClosed {
-			log.Fatalf("Failed to start server: %v", err)
+		log.Printf("Server listening on %s", port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server error: %v", err)
 		}
 	}()
 
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
-	<-stop
-
+	// Wait for interrupt signal to gracefully shut down.
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	<-quit
 	log.Println("Shutting down server...")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if err := srv.Shutdown(ctx); err!= nil {
-		log.Fatalf("Server shutdown failed: %v", err)
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("Server forced shutdown: %v", err)
 	}
-	log.Println("Server shutdown complete")
+
+	log.Println("Server stopped")
 }
