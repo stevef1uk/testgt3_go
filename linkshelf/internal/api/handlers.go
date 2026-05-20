@@ -4,137 +4,106 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"linkshelf/internal/store"
 )
 
 var bookmarkStore *store.Store
 
-func init() {
-	// Initialise the SQLite database and store.
-	db, err := store.OpenDB()
-	if err != nil {
-		panic(err)
-	}
-	bookmarkStore = store.NewStore(db)
+// SetStore injects the store dependency into the API package.
+func SetStore(s *store.Store) {
+	bookmarkStore = s
 }
 
-// ListBookmarksHandler returns all bookmarks as JSON.
+// ListBookmarksHandler returns a list of all bookmarks.
 func ListBookmarksHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	bookmarks, err := bookmarkStore.GetAllBookmarks()
+	bookmarks, err := bookmarkStore.ListBookmarks(r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to list bookmarks", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(bookmarks)
+	json.NewEncoder(w).Encode(bookmarks)
+}
+
+// CreateBookmarkHandler creates a new bookmark.
+func CreateBookmarkHandler(w http.ResponseWriter, r *http.Request) {
+	var bookmark store.Bookmark
+	if err := json.NewDecoder(r.Body).Decode(&bookmark); err != nil {
+		http.Error(w, "invalid request payload", http.StatusBadRequest)
+		return
+	}
+	if err := bookmarkStore.CreateBookmark(r.Context(), &bookmark); err != nil {
+		http.Error(w, "failed to create bookmark", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(bookmark)
 }
 
 // GetBookmarkHandler returns a single bookmark by ID.
 func GetBookmarkHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	id, ok := extractID(r.URL.Path)
-	if !ok {
-		http.Error(w, "invalid id", http.StatusBadRequest)
-		return
-	}
-	b, err := bookmarkStore.GetBookmark(id)
+	idStr := r.PathValue("id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
+		http.Error(w, "invalid bookmark ID", http.StatusBadRequest)
+		return
+	}
+	bookmark, err := bookmarkStore.GetBookmark(r.Context(), id)
+	if err != nil {
+		if err == store.ErrNotFound {
 			http.Error(w, "bookmark not found", http.StatusNotFound)
-		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
+		http.Error(w, "failed to get bookmark", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(b)
+	json.NewEncoder(w).Encode(bookmark)
 }
 
-// CreateBookmarkHandler creates a new bookmark from JSON body.
-func CreateBookmarkHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	var b store.Bookmark
-	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
-	}
-	if b.Title == "" || b.URL == "" {
-		http.Error(w, "missing required fields", http.StatusBadRequest)
-		return
-	}
-	if err := bookmarkStore.CreateBookmark(&b); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(b)
-}
-
-// UpdateBookmarkHandler updates a bookmark identified by ID.
+// UpdateBookmarkHandler updates an existing bookmark.
 func UpdateBookmarkHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPut && r.Method != http.MethodPatch {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	idStr := r.PathValue("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "invalid bookmark ID", http.StatusBadRequest)
 		return
 	}
-	id, ok := extractID(r.URL.Path)
-	if !ok {
-		http.Error(w, "invalid id", http.StatusBadRequest)
+	var bookmark store.Bookmark
+	if err := json.NewDecoder(r.Body).Decode(&bookmark); err != nil {
+		http.Error(w, "invalid request payload", http.StatusBadRequest)
 		return
 	}
-	var b store.Bookmark
-	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+	bookmark.ID = id
+	if err := bookmarkStore.UpdateBookmark(r.Context(), &bookmark); err != nil {
+		if err == store.ErrNotFound {
+			http.Error(w, "bookmark not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "failed to update bookmark", http.StatusInternalServerError)
 		return
 	}
-	b.ID = id
-	if err := bookmarkStore.UpdateBookmark(&b); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(b)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(bookmark)
 }
 
-// DeleteBookmarkHandler removes a bookmark identified by ID.
+// DeleteBookmarkHandler deletes a bookmark by ID.
 func DeleteBookmarkHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	idStr := r.PathValue("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "invalid bookmark ID", http.StatusBadRequest)
 		return
 	}
-	id, ok := extractID(r.URL.Path)
-	if !ok {
-		http.Error(w, "invalid id", http.StatusBadRequest)
-		return
-	}
-	if err := bookmarkStore.DeleteBookmark(id); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := bookmarkStore.DeleteBookmark(r.Context(), id); err != nil {
+		if err == store.ErrNotFound {
+			http.Error(w, "bookmark not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "failed to delete bookmark", http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-}
-
-// extractID parses an integer ID from the last path segment.
-func extractID(path string) (int, bool) {
-	parts := strings.Split(strings.Trim(path, "/"), "/")
-	if len(parts) == 0 {
-		return 0, false
-	}
-	idStr := parts[len(parts)-1]
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		return 0, false
-	}
-	return id, true
 }

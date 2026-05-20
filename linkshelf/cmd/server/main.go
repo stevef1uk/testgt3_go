@@ -35,7 +35,7 @@ func main() {
 		switch r.Method {
 		case http.MethodGet:
 			api.GetBookmarkHandler(w, r)
-		case http.MethodPut, http.MethodPatch:
+		case http.MethodPut:
 			api.UpdateBookmarkHandler(w, r)
 		case http.MethodDelete:
 			api.DeleteBookmarkHandler(w, r)
@@ -50,26 +50,24 @@ func main() {
 		Handler: mux,
 	}
 
-	// Run the server in a goroutine so we can handle shutdown signals.
+	// Run the server in a goroutine.
 	go func() {
-		log.Printf("Server listening on %s", port)
+		log.Printf("Server listening on %s", srv.Addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server error: %v", err)
+			log.Fatalf("listen: %s", err)
 		}
 	}()
 
-	// Wait for interrupt signal to gracefully shut down.
+	// Graceful shutdown.
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Println("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Server forced shutdown: %v", err)
+		log.Fatalf("Server forced to shutdown: %v", err)
 	}
-
-	log.Println("Server stopped")
+	log.Println("Server exiting")
 }
