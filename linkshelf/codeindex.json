@@ -1,0 +1,457 @@
+{
+  "meta": {
+    "root": "linkshelf/",
+    "total_files": 10,
+    "total_loc": 610,
+    "languages": [
+      "javascript",
+      "css",
+      "go"
+    ],
+    "indexed": true
+  },
+  "nodes": [
+    {
+      "id": "web/app.js",
+      "type": "module",
+      "language": "javascript",
+      "framework": null,
+      "size": 67,
+      "loc": 67,
+      "group": 0,
+      "imports": [],
+      "layer": "frontend",
+      "direct_dependents": 0,
+      "transitive_dependents": 0,
+      "blast_score": 0.0,
+      "imported_by": []
+    },
+    {
+      "id": "web/style.css",
+      "type": "style",
+      "language": "css",
+      "size": 40,
+      "loc": 40,
+      "group": 0,
+      "imports": [],
+      "layer": "frontend",
+      "direct_dependents": 0,
+      "transitive_dependents": 0,
+      "blast_score": 0.0,
+      "imported_by": []
+    },
+    {
+      "id": "cmd/server",
+      "type": "route",
+      "language": "go",
+      "size": 113,
+      "loc": 113,
+      "group": 1,
+      "imports": [
+        "github.com/mattn/go-sqlite3",
+        "testing",
+        "internal/api",
+        "context",
+        "internal/store",
+        "net",
+        "log",
+        "database",
+        "encoding"
+      ],
+      "layer": "backend",
+      "direct_dependents": 0,
+      "transitive_dependents": 0,
+      "blast_score": 0.0,
+      "imported_by": []
+    },
+    {
+      "id": "internal/api",
+      "type": "route",
+      "language": "go",
+      "size": 116,
+      "loc": 116,
+      "group": 2,
+      "imports": [
+        "testing",
+        "strings",
+        "net",
+        "internal/store",
+        "github.com/stretchr/testify",
+        "bytes",
+        "path",
+        "encoding"
+      ],
+      "layer": "backend",
+      "direct_dependents": 1,
+      "transitive_dependents": 0,
+      "blast_score": 1.0,
+      "imported_by": [
+        "cmd/server"
+      ]
+    },
+    {
+      "id": "internal/store",
+      "type": "store",
+      "language": "go",
+      "size": 274,
+      "loc": 274,
+      "group": 2,
+      "imports": [
+        "github.com/mattn/go-sqlite3",
+        "testing",
+        "strings",
+        "context",
+        "errors",
+        "database"
+      ],
+      "layer": "backend",
+      "direct_dependents": 2,
+      "transitive_dependents": 0,
+      "blast_score": 2.0,
+      "imported_by": [
+        "cmd/server",
+        "internal/api"
+      ]
+    },
+    {
+      "id": "github.com/mattn/go-sqlite3",
+      "type": "import",
+      "language": "go",
+      "size": 40,
+      "loc": 0,
+      "group": 9000,
+      "imports": [],
+      "layer": "backend",
+      "direct_dependents": 2,
+      "transitive_dependents": 1,
+      "blast_score": 2.5,
+      "imported_by": [
+        "cmd/server",
+        "internal/store"
+      ]
+    },
+    {
+      "id": "testing",
+      "type": "import",
+      "language": "go",
+      "size": 40,
+      "loc": 0,
+      "group": 9000,
+      "imports": [],
+      "layer": "backend",
+      "direct_dependents": 3,
+      "transitive_dependents": 0,
+      "blast_score": 3.0,
+      "imported_by": [
+        "cmd/server",
+        "internal/api",
+        "internal/store"
+      ]
+    },
+    {
+      "id": "context",
+      "type": "import",
+      "language": "go",
+      "size": 40,
+      "loc": 0,
+      "group": 9000,
+      "imports": [],
+      "layer": "backend",
+      "direct_dependents": 2,
+      "transitive_dependents": 1,
+      "blast_score": 2.5,
+      "imported_by": [
+        "cmd/server",
+        "internal/store"
+      ]
+    },
+    {
+      "id": "net",
+      "type": "import",
+      "language": "go",
+      "size": 40,
+      "loc": 0,
+      "group": 9000,
+      "imports": [],
+      "layer": "backend",
+      "direct_dependents": 2,
+      "transitive_dependents": 0,
+      "blast_score": 2.0,
+      "imported_by": [
+        "cmd/server",
+        "internal/api"
+      ]
+    },
+    {
+      "id": "log",
+      "type": "import",
+      "language": "go",
+      "size": 40,
+      "loc": 0,
+      "group": 9000,
+      "imports": [],
+      "layer": "backend",
+      "direct_dependents": 1,
+      "transitive_dependents": 0,
+      "blast_score": 1.0,
+      "imported_by": [
+        "cmd/server"
+      ]
+    },
+    {
+      "id": "database",
+      "type": "import",
+      "language": "go",
+      "size": 40,
+      "loc": 0,
+      "group": 9000,
+      "imports": [],
+      "layer": "backend",
+      "direct_dependents": 2,
+      "transitive_dependents": 1,
+      "blast_score": 2.5,
+      "imported_by": [
+        "cmd/server",
+        "internal/store"
+      ]
+    },
+    {
+      "id": "encoding",
+      "type": "import",
+      "language": "go",
+      "size": 40,
+      "loc": 0,
+      "group": 9000,
+      "imports": [],
+      "layer": "backend",
+      "direct_dependents": 2,
+      "transitive_dependents": 0,
+      "blast_score": 2.0,
+      "imported_by": [
+        "cmd/server",
+        "internal/api"
+      ]
+    },
+    {
+      "id": "strings",
+      "type": "import",
+      "language": "go",
+      "size": 40,
+      "loc": 0,
+      "group": 9000,
+      "imports": [],
+      "layer": "backend",
+      "direct_dependents": 2,
+      "transitive_dependents": 1,
+      "blast_score": 2.5,
+      "imported_by": [
+        "internal/api",
+        "internal/store"
+      ]
+    },
+    {
+      "id": "github.com/stretchr/testify",
+      "type": "import",
+      "language": "go",
+      "size": 40,
+      "loc": 0,
+      "group": 9000,
+      "imports": [],
+      "layer": "backend",
+      "direct_dependents": 1,
+      "transitive_dependents": 1,
+      "blast_score": 1.5,
+      "imported_by": [
+        "internal/api"
+      ]
+    },
+    {
+      "id": "bytes",
+      "type": "import",
+      "language": "go",
+      "size": 40,
+      "loc": 0,
+      "group": 9000,
+      "imports": [],
+      "layer": "backend",
+      "direct_dependents": 1,
+      "transitive_dependents": 1,
+      "blast_score": 1.5,
+      "imported_by": [
+        "internal/api"
+      ]
+    },
+    {
+      "id": "path",
+      "type": "import",
+      "language": "go",
+      "size": 40,
+      "loc": 0,
+      "group": 9000,
+      "imports": [],
+      "layer": "backend",
+      "direct_dependents": 1,
+      "transitive_dependents": 1,
+      "blast_score": 1.5,
+      "imported_by": [
+        "internal/api"
+      ]
+    },
+    {
+      "id": "errors",
+      "type": "import",
+      "language": "go",
+      "size": 40,
+      "loc": 0,
+      "group": 9000,
+      "imports": [],
+      "layer": "backend",
+      "direct_dependents": 1,
+      "transitive_dependents": 2,
+      "blast_score": 2.0,
+      "imported_by": [
+        "internal/store"
+      ]
+    }
+  ],
+  "links": [
+    {
+      "source": "cmd/server",
+      "target": "github.com/mattn/go-sqlite3",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "cmd/server",
+      "target": "testing",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "cmd/server",
+      "target": "internal/api",
+      "weight": 1,
+      "kind": "renders"
+    },
+    {
+      "source": "cmd/server",
+      "target": "context",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "cmd/server",
+      "target": "internal/store",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "cmd/server",
+      "target": "net",
+      "weight": 2,
+      "kind": "imports"
+    },
+    {
+      "source": "cmd/server",
+      "target": "log",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "cmd/server",
+      "target": "database",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "cmd/server",
+      "target": "encoding",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "internal/api",
+      "target": "testing",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "internal/api",
+      "target": "strings",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "internal/api",
+      "target": "net",
+      "weight": 2,
+      "kind": "imports"
+    },
+    {
+      "source": "internal/api",
+      "target": "internal/store",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "internal/api",
+      "target": "github.com/stretchr/testify",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "internal/api",
+      "target": "bytes",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "internal/api",
+      "target": "path",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "internal/api",
+      "target": "encoding",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "internal/store",
+      "target": "github.com/mattn/go-sqlite3",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "internal/store",
+      "target": "testing",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "internal/store",
+      "target": "strings",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "internal/store",
+      "target": "context",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "internal/store",
+      "target": "errors",
+      "weight": 1,
+      "kind": "imports"
+    },
+    {
+      "source": "internal/store",
+      "target": "database",
+      "weight": 1,
+      "kind": "imports"
+    }
+  ]
+}
