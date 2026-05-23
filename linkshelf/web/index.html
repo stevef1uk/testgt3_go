@@ -9,6 +9,29 @@
 </head>
 <body>
     <h1>Link Shelf</h1>
+<script>
+  const form = document.getElementById('link-form');
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const title = document.getElementById('title').value;
+    const url = document.getElementById('url').value;
+    fetch('/api/links', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ title, url })
+    })
+    .then((response) => response.json())
+    .then((data) => {
+      const linksList = document.getElementById('links');
+      const linkItem = document.createElement('li');
+      linkItem.textContent = `${data.title} - ${data.url}`;
+      linksList.appendChild(linkItem);
+    })
+    .catch((error) => console.error(error));
+  });
+</script>
     <form id="link-form">
         <label for="title">Title:</label>
         <input type="text" id="title" name="title" required><br><br>
