@@ -91,3 +91,4 @@
 {"id":"int-af31d8ec","kind":"field_change","created_at":"2026-05-23T08:31:44.049050386Z","actor":"testgt3/polecat","issue_id":"te-2vk","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
 {"id":"int-aa726369","kind":"field_change","created_at":"2026-05-23T08:34:34.184466725Z","actor":"testgt3/polecat","issue_id":"te-ga2","extra":{"field":"status","new_value":"open","old_value":"closed"}}
 {"id":"int-fbd804d8","kind":"field_change","created_at":"2026-05-23T08:35:11.507424472Z","actor":"testgt3/polecat","issue_id":"te-ga2","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-f2108044","kind":"field_change","created_at":"2026-05-23T08:39:58.14380913Z","actor":"testgt3/polecat","issue_id":"te-ga2","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
