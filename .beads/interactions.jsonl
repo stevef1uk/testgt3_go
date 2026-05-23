@@ -84,3 +84,5 @@
 {"id":"int-6ae0e053","kind":"field_change","created_at":"2026-05-23T07:45:19.608227287Z","actor":"testgt3/polecat","issue_id":"te-rnd","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
 {"id":"int-f5eb0f2f","kind":"field_change","created_at":"2026-05-23T07:45:23.229488845Z","actor":"testgt3/polecat","issue_id":"te-avv","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
 {"id":"int-6e1e5728","kind":"field_change","created_at":"2026-05-23T07:59:45.225585506Z","actor":"testgt3/polecat","issue_id":"te-avv","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Closed"}}
+{"id":"int-6974cb12","kind":"field_change","created_at":"2026-05-23T08:03:43.899870739Z","actor":"testgt3/polecat","issue_id":"te-ga2","extra":{"field":"status","new_value":"open","old_value":"closed"}}
+{"id":"int-58d331cd","kind":"field_change","created_at":"2026-05-23T08:05:45.838835645Z","actor":"testgt3/polecat","issue_id":"te-ga2","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
