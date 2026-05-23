@@ -6,7 +6,7 @@
 // Get the links container element
 const linksContainer = document.getElementById('links');
 
-// Fetch links on page load
+// Fetch links and render on page load
 window.onload = async () => {
   try {
     const response = await fetch('/api/links');
