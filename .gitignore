@@ -1,0 +1,15 @@
+.runtime/
+.claude/
+.logs/
+__pycache__/
+.venv/
+venv/
+state.json
+CLAUDE.md
+CLAUDE.local.md
+.gt-agent
+typescript
+AGENTS.md
+project_label
+progress_report
+gt-agent-state.json
