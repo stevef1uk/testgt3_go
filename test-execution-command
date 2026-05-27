@@ -1,0 +1,4 @@
+#!/bin/sh
+echo "Running Tests..."
+# ACTUAL TEST COMMANDS HERE
+echo "Tests Completed."
